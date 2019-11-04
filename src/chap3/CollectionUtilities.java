@@ -1,5 +1,7 @@
 package chap3;
 
+import chap2.Function;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -51,5 +53,22 @@ public class CollectionUtilities {
         List<T> workList = copy(lt);
         workList.add(t);
         return Collections.unmodifiableList(workList);
+    }
+
+    public static Integer fold(List<Integer> is, Integer identity,
+                               Function<Integer, Function<Integer, Integer>> f) {
+        int res = identity;
+        for (Integer i: is) {
+            res = f.apply(res).apply(i);
+        }
+        return res;
+    }
+
+    public static <T, U> U foldLeft(List<T> lt, U identity, Function<U, Function<T, U>> f) {
+        U res = identity;
+        for (T t: lt) {
+            res = f.apply(res).apply(t);
+        }
+        return res;
     }
 }
