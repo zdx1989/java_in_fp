@@ -71,4 +71,40 @@ public class CollectionUtilities {
         }
         return res;
     }
+
+    public static <T, U> U foldRight(List<T> lt, U identity, Function<T, Function<U, U>> f) {
+        U res = identity;
+        for (int i = lt.size() - 1; i >= 0; i--) {
+            res = f.apply(lt.get(i)).apply(res);
+        }
+        return res;
+    }
+
+    public static <T, U> U foldRightRecur(List<T> lt, U identity, Function<T, Function<U, U>> f) {
+        return list().isEmpty()?
+                identity:
+                f.apply(head(lt)).apply(foldRightRecur(tail(lt), identity, f));
+    }
+
+
+    public static <T> List<T> prepend(List<T> list, T t) {
+        return foldLeft(list, list(t), a -> b -> append(a, b));
+    }
+
+
+    public static <T> List<T> reverse(List<T> list) {
+        return foldLeft(list, list(), a -> b -> prepend(a, b));
+    }
+
+    public static <T, U> List<U> mapLeft(List<T> list, Function<T, U> f) {
+        return foldRight(list, list(), b -> a -> prepend(a, f.apply(b)));
+    }
+
+    public static <T, U> List<U> mapRight(List<T> list, Function<T, U> f) {
+        return foldLeft(list, list(), a -> b -> append(a, f.apply(b)));
+    }
+
+
+
+
 }
