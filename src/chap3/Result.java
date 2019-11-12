@@ -1,13 +1,35 @@
 package chap3;
 
+
 /**
  * Created by zhoudunxiong on 2019/11/7.
  */
-public interface Result {
+public interface Result<T> {
 
-    public class Success implements Result {}
+    void bind(Effect<T> success, Effect<String> failure);
 
-    public class Failure implements Result {
+    static <T> Result<T> success(T t) {
+        return new Success<>(t);
+    }
+
+    static <T> Result<T> failure(String message) {
+        return new Failure<>(message);
+    }
+
+    public class Success<T> implements Result<T> {
+        private final T value;
+
+        public Success(T value) {
+            this.value = value;
+        }
+
+        @Override
+        public void bind(Effect<T> success, Effect<String> failure) {
+            success.apply(value);
+        }
+    }
+
+    public class Failure<T> implements Result<T> {
 
         private final String message;
 
@@ -15,8 +37,9 @@ public interface Result {
             this.message = message;
         }
 
-        public String getMessage() {
-            return message;
+        @Override
+        public void bind(Effect<T> success, Effect<String> failure) {
+            failure.apply(message);
         }
     }
 
