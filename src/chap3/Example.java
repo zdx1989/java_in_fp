@@ -3,6 +3,8 @@ package chap3;
 import chap2.Function;
 
 import java.util.regex.Pattern;
+import static chap3.Case.*;
+import static chap3.Result.*;
 
 
 /**
@@ -16,16 +18,16 @@ public class Example {
 //    final Function<String, Boolean> emailChecker =
 //            email -> emailPattern.matcher(email).matches();
 
-    static Function<String, Result<String>> emailChecker = email -> {
-        if (email == null)
-            return new Result.Failure("email is null");
-        else if (email.isEmpty())
-            return new Result.Failure("email is empty");
-        else if (emailPattern.matcher(email).matches())
-            return Result.success(email);
-        else
-            return Result.failure("email is valid " + email);
-    };
+//    static Function<String, Result<String>> emailChecker = email -> {
+//        if (email == null)
+//            return new Result.Failure("email is null");
+//        else if (email.isEmpty())
+//            return new Result.Failure("email is empty");
+//        else if (emailPattern.matcher(email).matches())
+//            return Result.success(email);
+//        else
+//            return Result.failure("email is valid " + email);
+//    };
 
 //    static Executable validate(String mail) {
 //        Result result = emailChecker.apply(mail);
@@ -33,6 +35,15 @@ public class Example {
 //                ? () -> sendVerificationMail(mail)
 //                : () -> logError(((Result.Failure) result);
 //    }
+
+    static Function<String, Result<String>> emailChecker = email -> match (
+        mcase(() -> success(email)),
+        mcase(() -> email == null, () -> failure("email is null")),
+        mcase(() -> email.isEmpty(), () -> failure("email is empty")),
+        mcase(() -> !emailPattern.matcher(email).matches(), () -> failure("email is invalid"))
+    );
+
+
 
     static Effect<String> sendVerificationMail =
             mail -> System.out.println("verification email send to " + mail);
