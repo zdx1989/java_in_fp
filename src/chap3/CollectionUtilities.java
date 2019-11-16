@@ -1,6 +1,7 @@
 package chap3;
 
 import chap2.Function;
+import com.sun.org.apache.xpath.internal.operations.Bool;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -104,7 +105,43 @@ public class CollectionUtilities {
         return foldLeft(list, list(), a -> b -> append(a, f.apply(b)));
     }
 
+    public List<Integer> range0(int start, int end) {
+        List<Integer> result = new ArrayList<>();
+        for (int i = start; i <= end; i++) {
+            result.add(i);
+        }
+        return result;
+    }
 
+    public List<Integer> range1(int start, int end) {
+        List<Integer> result = new ArrayList<>();
+        int i = start;
+        while (i <= end) {
+            result.add(i);
+            i++;
+        }
+        return result;
+    }
+
+    public static <T> List<T> unfold(T seed, Function<T, T> f, Function<T, Boolean> p) {
+        List<T> result = new ArrayList<>();
+        T temp = seed;
+        while (p.apply(temp)) {
+            append(result, temp);
+            temp = f.apply(temp);
+        }
+        return result;
+    }
+
+    public static List<Integer> range(int start, int end) {
+        return unfold(start, i -> i + 1, i -> i < end);
+    }
+
+    public static List<Integer> range2(int start, int end) {
+        return end <= start
+                ? CollectionUtilities.list()
+                : CollectionUtilities.prepend(range(start + 1, end), start);
+    }
 
 
 
