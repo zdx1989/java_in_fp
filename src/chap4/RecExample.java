@@ -1,8 +1,10 @@
 package chap4;
 
 import chap2.Function;
+import chap2.Tuple;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -18,9 +20,17 @@ public class RecExample {
 
         System.out.println(fib1(10000));
 
-        System.out.println(foldLeft1(test, 0, x -> y -> x + y));
+        System.out.println(foldLeft1(test, "", x -> y -> x + y));
 
         System.out.println(range1(1, 9));
+
+        System.out.println(foldRight1(test, "", y -> x -> x + y));
+
+        System.out.println(makeString(test, ", "));
+
+        System.out.println(fibo(10));
+
+        System.out.println(fiboCorecursive(10));
 
     }
 
@@ -101,5 +111,82 @@ public class RecExample {
 
     static List<Integer> range1(int start, int end) {
         return range_(list(), start, end).eval();
+    }
+
+    static <T, U> U foldRight(List<T> list, U identity, Function<T, Function<U, U>> func) {
+        return list.isEmpty()
+                ? identity
+                : func.apply(head(list)).apply(foldRight(tail(list), identity, func));
+    }
+
+    static <T, U> U foldRight(U acc, List<T> list, U identity, Function<T, Function<U, U>> func) {
+        return list.isEmpty()
+                ? acc
+                : foldRight(func.apply(head(list)).apply(acc), tail(list), identity, func);
+    }
+
+    static <T, U> TailCall<U> foldRight_(U acc, List<T> list, Function<T, Function<U, U>> func) {
+        return list.isEmpty()
+                ? ret(acc)
+                : sus(() -> foldRight_(func.apply(head(list)).apply(acc), tail(list), func));
+    }
+
+    static <T, U> U foldRight1(List<T> list, U identity, Function<T, Function<U, U>> func) {
+        return foldRight_(identity, reverse(list), func).eval();
+    }
+
+    static <T> Function<T, T> composeAll(List<Function<T, T>> list) {
+        return foldRight1(list, Function.identity(), f1 -> f2 -> f2.compose(f1));
+    }
+
+    static  String fibo(int n) {
+        List<BigInteger> list = fibo_(list(BigInteger.ZERO), BigInteger.ZERO, BigInteger.ONE, BigInteger.valueOf(n)).eval();
+        return makeString(list, ", ");
+    }
+
+    static TailCall<List<BigInteger>> fibo_(List<BigInteger> acc, BigInteger acc1, BigInteger acc2, BigInteger x) {
+        return x.equals(BigInteger.ZERO)
+                ? ret(acc)
+                : x.equals(BigInteger.ONE)
+                    ? ret(append(acc, acc1.add(acc2)))
+                    : sus(() -> fibo_(append(acc, acc1.add(acc2)), acc2, acc1.add(acc2), x.subtract(BigInteger.ONE)));
+    }
+
+    static <T> String makeString(List<T> list, String split) {
+        return list.isEmpty()
+                ? ""
+                : tail(list).isEmpty()
+                    ? String.valueOf(head(list))
+                    : head(list) + foldLeft1(tail(list), "",  x -> y -> x + split + y);
+    }
+
+    static String fiboCorecursive(int n) {
+        Tuple<BigInteger, BigInteger> seed = new Tuple<>(BigInteger.ZERO, BigInteger.ONE);
+        Function<Tuple<BigInteger, BigInteger>, Tuple<BigInteger, BigInteger>> func =
+                x -> new Tuple<>(x._2, x._1.add(x._2));
+        List<BigInteger> list = mapRight(iterate1(seed, func, n + 1), x -> x._1);
+        return makeString(list, ", ");
+    }
+
+    static <T> List<T> iterate(T seed, Function<T, T> func, int n) {
+        List<T> res = new ArrayList<>();
+        T temp = seed;
+        int i = 0;
+        while (i < n) {
+            temp = func.apply(temp);
+            res.add(temp);
+            i++;
+        }
+        return res;
+    }
+
+    static <T> TailCall<List<T>> iterate_(List<T> acc, int index, T seed, Function<T,T> func, int n) {
+        return index >= n
+                ? ret(acc)
+                : sus(() -> iterate_(append(acc, func.apply(seed)), index + 1, func.apply(seed), func, n));
+    }
+
+    static <T> List<T> iterate1(T seed, Function<T, T> func, int n) {
+        return iterate_(new ArrayList<>(), 0, seed, func, n).eval();
     }
 }

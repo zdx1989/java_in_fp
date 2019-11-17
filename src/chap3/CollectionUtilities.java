@@ -1,7 +1,6 @@
 package chap3;
 
 import chap2.Function;
-import com.sun.org.apache.xpath.internal.operations.Bool;
 
 import java.util.ArrayList;
 import java.util.Arrays;
