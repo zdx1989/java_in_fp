@@ -36,6 +36,23 @@ public abstract class List<T> {
                 : sus(() -> drop_(acc.tail(), n - 1));
     }
 
+    public <B> List<B> map(Function<T, B> func) {
+        return foldRight(list(), x -> y -> y.cons(func.apply(x)));
+    }
+
+    public List<T> filter(Function<T, Boolean> func) {
+        return foldRight(list(), x -> y -> func.apply(x) ? y.cons(x) : y);
+    }
+
+    public <B> List<B> flatMap(Function<T, List<B>> func) {
+        return foldRight(list(), x -> y -> concat1(func.apply(x), y));
+    }
+
+    public List<T> filter1(Function<T, Boolean> func) {
+        return flatMap(x -> func.apply(x) ? list(x) : list());
+    }
+
+
     private List() {
     }
 
@@ -278,6 +295,10 @@ public abstract class List<T> {
 
     public static <A> List<A> flatten(List<List<A>> list) {
         return foldRight(list, List.list(), x -> y -> concat(x, y));
+    }
+
+    public static <A> List<A> flatten1(List<List<A>> list) {
+        return list.flatMap(Function.identity());
     }
 
     public static List<String> doubleString(List<Double> list) {
