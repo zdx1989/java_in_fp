@@ -1,7 +1,9 @@
 package chap5;
 
 import chap2.Function;
+import chap2.Tuple;
 import chap4.TailCall;
+import chap7.Result;
 import com.sun.org.apache.xpath.internal.operations.Bool;
 
 import static chap4.TailCall.*;
@@ -16,6 +18,8 @@ public abstract class List<T> {
     public abstract List<T> reverse();
     public abstract List<T> init();
     public abstract <U> U foldRight(U identity, Function<T, Function<U, U>> func);
+    public abstract int lengthMemoized();
+    public int length;
 
     @SuppressWarnings("rawtypes")
     public static final List NIL = new Nil();
@@ -57,6 +61,7 @@ public abstract class List<T> {
     }
 
     public static class Nil<T> extends List<T> {
+        public int length = 0;
         @Override
         public T head() {
            throw new IllegalStateException("head called an empty list");
@@ -101,6 +106,16 @@ public abstract class List<T> {
         public <U> U foldRight(U identity, Function<T, Function<U, U>> func) {
             return identity;
         }
+
+        @Override
+        public int lengthMemoized() {
+            return 0;
+        }
+
+        public Result<T> headOption() {
+            return Result.empty();
+        }
+
     }
 
     public static class Cons<T> extends List<T> {
@@ -110,6 +125,7 @@ public abstract class List<T> {
         public Cons(T head, List<T> tail) {
             this.head = head;
             this.tail = tail;
+            length = tail.length + 1;
         }
 
         @Override
@@ -181,7 +197,14 @@ public abstract class List<T> {
                     : sus(() -> foldRight_(func.apply(list.head()).apply(acc), list.tail(), identity, func));
         }
 
+        @Override
+        public int lengthMemoized() {
+            return 0;
+        }
 
+        public Result<T> headOption() {
+            return Result.success(head);
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -304,4 +327,101 @@ public abstract class List<T> {
     public static List<String> doubleString(List<Double> list) {
         return foldRight(list, List.list(), x -> y -> y.cons(x.toString()));
     }
-}
+
+    public static <A> List<A> flattenResult(List<Result<A>> list) {
+        return flattenResult_(list, list()).eval();
+    }
+
+    public static <A> TailCall<List<A>> flattenResult_(List<Result<A>> lra, List<A> la) {
+        return lra.isEmpty()
+                ? TailCall.ret(la)
+                : lra.head().isSuccess()
+                    ? TailCall.sus(() -> flattenResult_(lra.tail(), la.cons(lra.head().get())))
+                    : TailCall.sus(() -> flattenResult_(lra.tail(), la));
+    }
+
+    public static <A> List<A> flattenResult1(List<Result<A>> list) {
+        return list.foldRight(List.list(), ra -> la -> ra.map(la::cons).getOrElse(la));
+    }
+
+    public static <A> Result<List<A>> sequence(List<Result<A>> lra) {
+        return lra.foldRight(Result.success(list()), ra -> rla -> Result.map2(ra, rla, a -> la -> la.cons(a)));
+    }
+
+    public static <A, B> Result<List<B>> traverse(List<Result<A>> lra, Function<A, B> func) {
+        return lra.foldRight(Result.success(list()),
+                ra -> rlb -> Result.map2(ra, rlb, a -> lb -> lb.cons(func.apply(a))));
+    }
+
+    public static <A> Result<List<A>> sequence1(List<Result<A>> lra) {
+        return traverse(lra, Function.identity());
+    }
+
+    public static <A, B, C> List<C> zipWith(List<A> la, List<B> lb, Function<A, Function<B, C>> func) {
+        return zipWith_(list(), la, lb, func).eval().reverse();
+    }
+
+    public static <A, B, C> TailCall<List<C>> zipWith_(List<C> acc, List<A> la, List<B> lb, Function<A, Function<B, C>> func) {
+        return la.isEmpty() || la.isEmpty()
+                ? ret(acc)
+                : sus(() -> zipWith_(acc.cons(func.apply(la.head()).apply(lb.head())), la.tail(), lb.tail(), func));
+    }
+
+    public static <A, B, C> List<C> product(List<A> la, List<B> lb, Function<A, Function<B, C>> func) {
+        return la.flatMap(a ->
+                lb.map(b -> func.apply(a).apply(b)));
+    }
+
+    public static <A, B> Tuple<List<A>, List<B>> unzip(List<Tuple<A, B>> list) {
+        return list.foldRight(new Tuple<>(list(), list()),
+                tab -> tList -> new Tuple<>(tList._1.cons(tab._1), tList._2.cons(tab._2)));
+    }
+
+    public static <A> boolean hasSubsequence(List<A> list, List<A> subList) {
+        return hasSubsequence_(list, subList).eval();
+    }
+
+    public static <A> TailCall<Boolean> hasSubsequence_(List<A> list, List<A> subList) {
+        return subList.isEmpty()
+                ? ret(true)
+                : list.isEmpty()
+                    ? ret(false)
+                    : startWith(list, subList)
+                        ? sus(() -> hasSubsequence_(list.tail(), subList))
+                        : ret(false);
+    }
+
+
+    public static <A> boolean startWith(List<A> list, List<A> subList) {
+        return startWith_(list, subList).eval();
+    }
+
+    public static <A> TailCall<Boolean> startWith_(List<A> list, List<A> subList) {
+        return subList.isEmpty()
+                ? ret(true)
+                : list.isEmpty()
+                    ? ret(false)
+                    : list.head().equals(subList.head())
+                        ? ret(false)
+                        : sus(() -> startWith_(list.tail(), subList.tail()));
+    }
+
+    public static <A> boolean exist(List<A> list, Function<A, Boolean> func) {
+        return func.apply(list.head()) || exist(list.tail(), func);
+    }
+
+    public static <A> boolean exist1(List<A> list, Function<A, Boolean> func) {
+        return foldLeftZero_(list, true, true, x -> y -> x || func.apply(y)).eval();
+    }
+
+    public static <A, B> B foldLeftZero(List<A> list, B identity, B zero, Function<B, Function<A, B>> func) {
+        return foldLeftZero_(list, identity, zero, func).eval();
+    }
+
+    public static <A, B> TailCall<B> foldLeftZero_(List<A> list, B acc, B zero,
+                                                   Function<B, Function<A, B>> func) {
+       return list.isEmpty() || acc.equals(zero)
+                ? ret(acc)
+                : sus(() -> foldLeftZero_(list.tail(), func.apply(acc).apply(list.head()), zero, func));
+    }
+ }
