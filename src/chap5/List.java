@@ -6,6 +6,8 @@ import chap4.TailCall;
 import chap7.Result;
 import com.sun.org.apache.xpath.internal.operations.Bool;
 
+import java.util.Arrays;
+
 import static chap4.TailCall.*;
 
 public abstract class List<T> {
@@ -411,7 +413,7 @@ public abstract class List<T> {
     }
 
     public static <A> boolean exist1(List<A> list, Function<A, Boolean> func) {
-        return foldLeftZero_(list, true, true, x -> y -> x || func.apply(y)).eval();
+        return foldLeftZero(list, true, true, x -> y -> x || func.apply(y));
     }
 
     public static <A, B> B foldLeftZero(List<A> list, B identity, B zero, Function<B, Function<A, B>> func) {
@@ -423,5 +425,15 @@ public abstract class List<T> {
        return list.isEmpty() || acc.equals(zero)
                 ? ret(acc)
                 : sus(() -> foldLeftZero_(list.tail(), func.apply(acc).apply(list.head()), zero, func));
+    }
+
+    public static <A> boolean forAll(List<A> list, Function<A, Boolean> func) {
+        return foldLeftZero(list, false, true, x -> y -> x && func.apply(y));
+    }
+
+    public static void main(String[] args) {
+        List<String> names = List.list("ygy", "cwj", "lp");
+        System.out.println(List.forAll(names, x -> x.length() >= 2));
+
     }
  }
