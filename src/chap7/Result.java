@@ -2,10 +2,9 @@ package chap7;
 
 import chap2.Function;
 import chap3.Effect;
-import chap3.Suppllier;
+import chap3.Supplier;
 import chap6.Option;
 
-import java.util.concurrent.ExecutionException;
 import java.util.function.Predicate;
 
 
@@ -13,7 +12,7 @@ public abstract class Result<V> {
 
     public abstract V getOrElse(final V defaultValue);
 
-    public abstract V getOrElse(final Suppllier<V> defaultValue);
+    public abstract V getOrElse(final Supplier<V> defaultValue);
 
     public abstract <U> Result<U> map(Function<V, U> func);
 
@@ -33,7 +32,7 @@ public abstract class Result<V> {
         return map(func).getOrElse(false);
     }
 
-    public Result<V> orElse(Suppllier<Result<V>> defaultValue) {
+    public Result<V> orElse(Supplier<Result<V>> defaultValue) {
         return map(x -> this).getOrElse(defaultValue.get());
     }
 
@@ -53,7 +52,7 @@ public abstract class Result<V> {
         }
 
         @Override
-        public V getOrElse(Suppllier<V> defaultValue) {
+        public V getOrElse(Supplier<V> defaultValue) {
             return this.value;
         }
 
@@ -125,7 +124,7 @@ public abstract class Result<V> {
         }
 
         @Override
-        public V getOrElse(Suppllier<V> defaultValue) {
+        public V getOrElse(Supplier<V> defaultValue) {
             return defaultValue.get();
         }
 

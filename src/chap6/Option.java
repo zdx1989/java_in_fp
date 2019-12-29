@@ -1,14 +1,14 @@
 package chap6;
 
 import chap2.Function;
-import chap3.Suppllier;
+import chap3.Supplier;
 import chap5.List;
 import static chap5.List.*;
 
 public abstract class Option<A> {
 
     public abstract A getOrThrow();
-    public abstract A getOrElse(Suppllier<A> defaultValue);
+    public abstract A getOrElse(Supplier<A> defaultValue);
     public abstract <B> Option<B> map(Function<A, B> func);
     public abstract boolean isSome();
 
@@ -16,7 +16,7 @@ public abstract class Option<A> {
         return map(func).getOrElse(Option::none);
     }
 
-    public Option<A> orElse(Suppllier<Option<A>> defaultValue) {
+    public Option<A> orElse(Supplier<Option<A>> defaultValue) {
         return map(x -> this).getOrElse(defaultValue);
     }
 
@@ -37,7 +37,7 @@ public abstract class Option<A> {
         }
 
         @Override
-        public A getOrElse(Suppllier<A> defaultValue) {
+        public A getOrElse(Supplier<A> defaultValue) {
             return defaultValue.get();
         }
 
@@ -76,7 +76,7 @@ public abstract class Option<A> {
         }
 
         @Override
-        public A getOrElse(Suppllier<A> defaultValue) {
+        public A getOrElse(Supplier<A> defaultValue) {
             return value;
         }
 
